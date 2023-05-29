@@ -1,8 +1,6 @@
 FROM python:3.11.3
 
-ENV APP_HELPER /app
 
-WORKDIR $APP_HELPER
 
 
 
@@ -17,5 +15,5 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["python", "project_team_10\main.py"]
+CMD ["python", "main.py"]
 

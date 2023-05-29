@@ -1,65 +1,29 @@
-from abc import ABC, abstractmethod
+from __future__ import annotations
 
-from PIL import Image, ImageTk
-import tkinter as tk
-from pathlib import Path
 import os
 import pickle
 import re
-import time
-import sys
 import shutil
+import time
+from abc import ABC, abstractmethod
 from collections import UserDict
-from datetime import date, timedelta
-from termcolor import colored
-import colorama
+from datetime import date
+from pathlib import Path
 
-from project_team_10.notes import CLINotes
+import colorama
+from termcolor import colored
+
+
 
 colorama.init()
 
-dir_path = os.path.dirname(__file__)
 
 
-class Output(ABC):
+
+class Message(ABC):
     @abstractmethod
     def print(self):
         pass
-
-class Logo_Image:
-    def __init__(
-        self,
-        title="Volkan",
-        geometry="300x400",
-        image="Volkan.png",
-        button_img="button.png",
-    ):
-        self.window = tk.Tk()
-        self.window.title(title)
-        self.window.geometry(geometry)
-        self.window.resizable(width=False, height=False)
-        print(os.getcwd())
-        self.canvas = tk.Canvas(self.window, width=600, height=400)
-        self.canvas.place(x=-1, y=-1)
-        self.img = Image.open(os.path.join(dir_path, image))
-
-        self.resized_image = self.img.resize((300, 400), Image.ANTIALIAS)
-        self.bgImage = ImageTk.PhotoImage(self.resized_image)
-        self.bg = self.canvas.create_image(0, 0, image=self.bgImage, anchor=tk.NW)
-
-        self.img1 = Image.open(os.path.join(dir_path, button_img))
-        self.resized_button = self.img1.resize((100, 30), Image.ANTIALIAS)
-        self.bgBtn = ImageTk.PhotoImage(self.resized_button)
-
-        self.button = self.canvas.create_image(150, 365, image=self.bgBtn)
-        self.command = lambda: self.click_button_event()
-        self.canvas.tag_bind(self.button, "<Button-1>", self.click_button_event)
-
-    def run(self):
-        self.window.mainloop()
-
-    def click_button_event(self, event):
-        self.window.destroy()
 
 
 NOT_DEFINED = "not defined"
@@ -67,7 +31,7 @@ ADRESSBOOK = "book.bin"
 TELEPHONE = r"[+]380[(][0-9]{2}[)][0-9]{3}[-][0-9]{2}[-][0-9]{2} | [+]380[(][0-9]{2}[)][0-9]{3}[-][0-9]{1}[-][0-9]{3}"
 
 
-class AddressBook(UserDict, Output):
+class AddressBook(UserDict, Message):
     def __getstate__(self):
         attributes = self.__dict__.copy()
         return attributes
@@ -75,18 +39,19 @@ class AddressBook(UserDict, Output):
     def __setstate__(self, value):
         self.__dict__ = value
 
+    # add abstract class
     def save_to_file(self, filename):
         with open(filename, "wb") as fh:
-            pickle.dump(self, fh)
+            return pickle.dump(self, fh)
 
     def read_from_file(self, filename):
         with open(filename, "rb") as fh:
-            read = pickle.load(fh)
-        return read
+            return pickle.load(fh)
 
     def iterator(self, n=1):  # n indicates number of record to take for each iteration
         recorded = 0
         output = []
+
         for record in self.data:
             if recorded < n:
                 output.append(self.data[record])
@@ -117,7 +82,7 @@ class AddressBook(UserDict, Output):
 contact_book = AddressBook()
 
 
-class Record(Output):  # responsible for the record manipulation
+class Record(Message):  # responsible for the record manipulation
     def __init__(self, name):
         self.name = name  # type of Name
         self.phone = []  # list of phones
@@ -136,7 +101,7 @@ class Record(Output):  # responsible for the record manipulation
             birthday = date(
                 year=int(inputdate[0]), month=int(inputdate[1]), day=int(inputdate[2])
             )
-            thisbirthday = date(year=today.year, month=birthday.month, day=birthday.day)
+            date(year=today.year, month=birthday.month, day=birthday.day)
             if today.month > birthday.month:  # birthday has passed
                 nextbirthday = date(
                     year=today.year + 1, month=birthday.month, day=birthday.day
@@ -371,7 +336,6 @@ def check_birthday(val):
 
 exit_list = ["good bye", "close", "exit", "close"]
 
-
 # list of commands to use
 
 HELLO_CMD = "hello"
@@ -386,7 +350,7 @@ EDT_CMD = "edit"
 RMV_CMD = "remove"
 EMAIL_CMD = "email"
 CONGRAT_CMD = "birthday"
-NOTES_CMD = "notes"
+# NOTES_CMD = "notes"
 
 COMMANDS = [
     HELLO_CMD,
@@ -400,7 +364,6 @@ COMMANDS = [
     RMV_CMD,
     EMAIL_CMD,
     CONGRAT_CMD,
-    NOTES_CMD,
 ]
 
 
@@ -689,12 +652,6 @@ def email(list):  # list contains lists of possible actions to add
 
 
 def show(list=[]):
-    # print("-" * 36)
-    # print("{:^36}|".format("Current list of the contacts"))
-    # print("-" * 36)
-    # for contact in CONTACTS:
-    #    print("{:^16} | {:^16} |".format(contact, CONTACTS[contact]))
-    #    print("-" * 36)
     contact_book.print()
     return "Done"
 
@@ -885,12 +842,12 @@ def birthday(list):  # list contains lists of possible actions to add
     return "birthday have: " + output
 
 
-def start_notes(list=[]):  # list contains lists of possible actions to add
-    print(">> do you want to start working with notes ?[y/n]")
-    reponse = input(">> ").lower()
-    if reponse == "y":
-        CLINotes.run_notes()
-    return "continue with address book again"
+# def start_notes(list=[]):  # list contains lists of possible actions to add
+#     print(">> do you want to start working with notes ?[y/n]")
+#     reponse = input(">> ").lower()
+#     if reponse == "y":
+#         CLINotes.run_notes()
+#     return "continue with address book again"
 
 
 def command_parser(line):
@@ -915,7 +872,7 @@ PARSER = {
     EDT_CMD: lambda x: re.findall(EDT_CMD + "[ ]*[a-zA-Z0-9\+\-()]*", x),
     RMV_CMD: lambda x: re.findall(RMV_CMD + "[ ]*[a-zA-Z0-9\+\-()]*", x),
     CONGRAT_CMD: lambda x: re.findall(CONGRAT_CMD + "[ ]*[a-zA-Z0-9\+\-()]*", x),
-    NOTES_CMD: lambda x: re.findall(NOTES_CMD, x),
+    # NOTES_CMD: lambda x: re.findall(NOTES_CMD, x)
 }
 
 RESPONSE = {
@@ -930,17 +887,18 @@ RESPONSE = {
     EDT_CMD: edit,
     RMV_CMD: remove,
     CONGRAT_CMD: birthday,
-    NOTES_CMD: start_notes,
+    # NOTES_CMD: start_notes
 }
 
 
 def main():
     while True:
         line = input(">> ").lower()
+
         if line in exit_list:
             print(">> Good bye!")
 
-            if len(contact_book) != 0:
+            if len(contact_book) is not False:
                 out_save = colored(">> address book saved to ", "yellow")
                 out_address_book = colored(ADRESSBOOK, "red")
                 print(out_save + out_address_book)
@@ -956,17 +914,12 @@ def main():
 
 
 def start():
-    # CONTACTS = {}  # dictionary of the contacts
-
-    window = Logo_Image()
-    window.run()
-    # print(os.getcwd())
     contact_book = AddressBook()  # address book of contacts
-
     if os.path.exists(ADRESSBOOK):
-        contact_book = contact_book.read_from_file(ADRESSBOOK)
-        print(colored(">> address book was succesfully read", "yellow"))
+        contact_book.read_from_file(ADRESSBOOK)
+        print(colored(">> address book was successfully read", "yellow"))
         # contact_book.print()
+
     else:
         out_address_book_not = colored(
             f">> address book {ADRESSBOOK} was not found", "red"
@@ -975,22 +928,6 @@ def start():
 
     main()
 
-    # if len(contact_book) != 0:
-    #     out_save = colored(">> address book saved to ", "yellow")
-    #     out_address_book = colored(ADRESSBOOK, "red")
-    #     print(out_save + out_address_book)
-    #     contact_book.save_to_file(ADRESSBOOK)
 
-
-# print(check_phone("+386478617006"))
-# print(check_name("+1(647)861 wrwf"))
-# line = "add Alisa +16478617006 show all"
-# command_line = PARSER["add"](line)
-# handler = RESPONSE["add"]
-# print(handler(command_line))
-# 3command_line = PARSER["show"](line)
-# handler = RESPONSE["show"]
-# print(handler(command_line))
-# wait()
 if __name__ == "__main__":
     start()
